@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>台股資金流向 Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg"></div>
+    <div class="app">
+      <header class="header">
+        <div>
+          <p class="eyebrow">After-market · TWSE & TPEx Open Data</p>
+          <h1>台股資金流向 Dashboard</h1>
+          <p class="sub">當日總成交量、各類股成交量與加權平均漲跌，支援自訂族群比較。</p>
+        </div>
+        <div class="meta">
+          <div class="meta-item">
+            <span>資料日期</span>
+            <strong id="data-date">--</strong>
+          </div>
+          <div class="meta-item">
+            <span>最後更新</span>
+            <strong id="data-updated">--</strong>
+          </div>
+        </div>
+      </header>
+
+      <section class="toolbar">
+        <div class="toolbar-group">
+          <label>
+            市場篩選
+            <select id="market-filter">
+              <option value="all">上市 + 上櫃 + 興櫃</option>
+              <option value="listed">上市</option>
+              <option value="otc">上櫃</option>
+              <option value="emerging">興櫃</option>
+            </select>
+          </label>
+          <button id="manual-refresh" class="button ghost">立即更新</button>
+        </div>
+        <div class="toolbar-group">
+          <label class="toggle">
+            <input type="checkbox" id="auto-refresh" />
+            <span>盤後自動更新</span>
+          </label>
+          <label>
+            更新時間
+            <input type="time" id="auto-refresh-time" value="15:30" />
+          </label>
+        </div>
+      </section>
+
+      <section class="cards" id="market-cards">
+        <div class="card">
+          <span>當日總成交量</span>
+          <strong id="total-volume">--</strong>
+          <small id="total-volume-note">--</small>
+        </div>
+        <div class="card">
+          <span>當日總成交金額</span>
+          <strong id="total-value">--</strong>
+          <small id="total-value-note">--</small>
+        </div>
+        <div class="card">
+          <span>全市場加權漲跌</span>
+          <strong id="market-change">--</strong>
+          <small id="market-change-note">成交金額加權</small>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>各類股成交量與加權漲跌</h2>
+            <div class="panel-actions">
+              <label>
+                排序
+                <select id="industry-sort">
+                  <option value="volume">成交量</option>
+                  <option value="value">成交金額</option>
+                  <option value="change">加權漲跌</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="industry-chart" height="140"></canvas>
+          </div>
+          <div id="industry-table" class="table"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>自訂族群比較</h2>
+            <div class="panel-actions">
+              <label>
+                排序
+                <select id="group-sort">
+                  <option value="custom">自訂順序</option>
+                  <option value="volume">成交量</option>
+                  <option value="value">成交金額</option>
+                  <option value="change">加權漲跌</option>
+                </select>
+              </label>
+              <button id="add-group" class="button">建立族群</button>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="group-chart" height="160"></canvas>
+          </div>
+          <div id="group-list" class="group-list"></div>
+          <div id="group-compare" class="compare"></div>
+        </div>
+      </section>
+
+      <section class="grid trend-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>成交金額趨勢（本機累積）</h2>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="trend-chart" height="160"></canvas>
+          </div>
+          <p class="hint">顯示此瀏覽器累積的盤後資料，日期越多越完整。</p>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <h2>類股熱度地圖</h2>
+          </div>
+          <div id="industry-heatmap" class="heatmap"></div>
+        </div>
+      </section>
+
+      <section class="panel panel-full">
+        <div class="panel-header">
+          <h2>原始資料狀態</h2>
+        </div>
+        <div id="status" class="status">等待載入資料…</div>
+      </section>
+    </div>
+
+    <dialog id="group-dialog" class="dialog">
+      <form method="dialog" id="group-form">
+        <h3 id="group-dialog-title">建立自訂族群</h3>
+        <label>
+          族群名稱
+          <input type="text" id="group-name" placeholder="例：AI 供應鏈" required />
+        </label>
+        <label>
+          選擇產業（可複選）
+          <select id="group-industries" multiple></select>
+        </label>
+        <label>
+          加入股票代號（用逗號分隔）
+          <input type="text" id="group-stocks" placeholder="2330, 2317, 2454" />
+        </label>
+        <div class="dialog-actions">
+          <button value="cancel" class="button ghost" type="button" id="cancel-group">取消</button>
+          <button value="submit" class="button" type="submit">儲存</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
