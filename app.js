@@ -1,12 +1,11 @@
 const DATA_ENDPOINTS = {
-  twseStocks: "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL",
-  otcStocks:
-    "https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&se=EW&o=data",
-  emergingStocks: "https://www.tpex.org.tw/web/emergingstock/lateststats/new_dl.php",
-  marketDaily: "https://www.twse.com.tw/exchangeReport/FMTQIK?response=open_data",
-  listedCompanies: "https://mopsfin.twse.com.tw/opendata/t187ap03_L.csv",
-  otcCompanies: "https://mopsfin.twse.com.tw/opendata/t187ap03_O.csv",
-  emergingCompanies: "https://mopsfin.twse.com.tw/opendata/t187ap03_R.csv",
+  twseStocks: "./data/twse_stock_day_all.json",
+  otcStocks: "./data/otc_stocks.csv",
+  emergingStocks: "./data/emerging_stocks.csv",
+  marketDaily: "./data/market_daily.csv",
+  listedCompanies: "./data/companies_listed.csv",
+  otcCompanies: "./data/companies_otc.csv",
+  emergingCompanies: "./data/companies_emerging.csv",
 };
 
 const state = {
