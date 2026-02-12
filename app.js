@@ -97,9 +97,53 @@ const normalizeDate = (value) => {
   if (/^\d{8}$/.test(text)) {
     return `${text.slice(0, 4)}-${text.slice(4, 6)}-${text.slice(6, 8)}`;
   }
+  if (/^\d{7}$/.test(text)) {
+    const rocYear = Number(text.slice(0, 3));
+    const year = rocYear + 1911;
+    return `${year}-${text.slice(3, 5)}-${text.slice(5, 7)}`;
+  }
   if (/^\d{4}\/\d{2}\/\d{2}$/.test(text)) {
     return text.replaceAll("/", "-");
   }
+  return text;
+};
+
+const INDUSTRY_CODE_MAP = {
+  "01": "水泥",
+  "02": "食品",
+  "03": "塑膠",
+  "04": "紡織纖維",
+  "05": "電機機械",
+  "06": "電器電纜",
+  "07": "化學",
+  "08": "生技醫療",
+  "09": "玻璃陶瓷",
+  "10": "造紙",
+  "11": "鋼鐵",
+  "12": "橡膠",
+  "13": "汽車",
+  "14": "建材營造",
+  "15": "航運",
+  "16": "觀光餐旅",
+  "17": "金融保險",
+  "18": "貿易百貨",
+  "19": "綜合",
+  "20": "其他",
+  "21": "半導體",
+  "22": "電腦及週邊",
+  "23": "光電",
+  "24": "通信網路",
+  "25": "電子零組件",
+  "26": "電子通路",
+  "27": "資訊服務",
+  "28": "其他電子",
+};
+
+const normalizeIndustry = (value) => {
+  const text = String(value ?? "").trim();
+  if (!text) return "其他";
+  if (INDUSTRY_CODE_MAP[text]) return INDUSTRY_CODE_MAP[text];
+  if (/^\d{2}$/.test(text)) return `代碼${text}`;
   return text;
 };
 
@@ -247,7 +291,7 @@ const updateHistory = (snapshot, marketKey) => {
 const buildIndustryMap = (rows, marketLabel) => {
   rows.forEach((row) => {
     const code = row["公司代號"]?.trim();
-    const industry = row["產業別"]?.trim();
+    const industry = normalizeIndustry(row["產業別"]);
     if (code && industry) {
       state.industries.set(code, industry);
       if (marketLabel) {
@@ -258,13 +302,19 @@ const buildIndustryMap = (rows, marketLabel) => {
 };
 
 const extractStock = (row, market) => {
-  const code = pickField(row, ["證券代號", "股票代號", "代號"]);
-  const name = pickField(row, ["證券名稱", "股票名稱", "名稱"]);
+  const code = pickField(row, ["證券代號", "股票代號", "代號", "Code"]);
+  const name = pickField(row, ["證券名稱", "股票名稱", "名稱", "Name"]);
   const date = pickField(row, ["日期", "Date", "資料日期"]);
-  const volume = normalizeNumber(pickField(row, ["成交股數", "成交量", "成交股數(千股)"]));
-  const value = normalizeNumber(pickField(row, ["成交金額", "成交金額(仟元)"]));
-  const close = normalizeNumber(pickField(row, ["收盤價", "收盤"]));
-  const change = normalizeChange(pickField(row, ["漲跌價差", "漲跌"]));
+  const volume = normalizeNumber(
+    pickField(row, ["成交股數", "成交量", "成交股數(千股)", "TradeVolume"])
+  );
+  const value = normalizeNumber(
+    pickField(row, ["成交金額", "成交金額(仟元)", "TradeValue"])
+  );
+  const close = normalizeNumber(
+    pickField(row, ["收盤價", "收盤", "ClosingPrice"])
+  );
+  const change = normalizeChange(pickField(row, ["漲跌價差", "漲跌", "Change"]));
 
   const prevClose = close - change;
   const pctChange = prevClose > 0 ? (change / prevClose) * 100 : 0;
