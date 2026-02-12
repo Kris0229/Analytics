@@ -26,6 +26,42 @@ jobs:
           curl -L -o data/companies_listed.csv "https://mopsfin.twse.com.tw/opendata/t187ap03_L.csv"
           curl -L -o data/companies_otc.csv "https://mopsfin.twse.com.tw/opendata/t187ap03_O.csv"
           curl -L -o data/companies_emerging.csv "https://mopsfin.twse.com.tw/opendata/t187ap03_R.csv"
+          python3 - <<'PY'
+          import json
+          import os
+          import shutil
+
+          def roc_to_date(roc):
+            roc = str(roc).strip()
+            if len(roc) == 7 and roc.isdigit():
+              year = int(roc[:3]) + 1911
+              return f\"{year}-{roc[3:5]}-{roc[5:7]}\"
+            return \"unknown\"
+
+          with open(\"data/twse_stock_day_all.json\", \"r\", encoding=\"utf-8\") as f:
+            data = json.load(f)
+
+          date = roc_to_date(data[0].get(\"Date\") if data else \"unknown\")
+          history_dir = os.path.join(\"data\", \"history\", date)
+          os.makedirs(history_dir, exist_ok=True)
+
+          for filename in [\"twse_stock_day_all.json\", \"otc_stocks.csv\", \"emerging_stocks.csv\"]:
+            shutil.copy2(os.path.join(\"data\", filename), os.path.join(history_dir, filename))
+
+          index_path = os.path.join(\"data\", \"history\", \"index.json\")
+          dates = []
+          if os.path.exists(index_path):
+            with open(index_path, \"r\", encoding=\"utf-8\") as f:
+              try:
+                dates = json.load(f)
+              except Exception:
+                dates = []
+          if date not in dates:
+            dates.append(date)
+          dates = sorted(dates)[-14:]
+          with open(index_path, \"w\", encoding=\"utf-8\") as f:
+            json.dump(dates, f, ensure_ascii=False)
+          PY
 
       - name: Commit updates
         run: |

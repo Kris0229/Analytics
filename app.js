@@ -24,12 +24,15 @@ const state = {
     industry: null,
     groups: null,
     trend: null,
+    industryTrend: null,
   },
   autoRefresh: {
     enabled: false,
     time: "15:30",
     lastRunDate: null,
   },
+  historyIndex: [],
+  historyCache: new Map(),
 };
 
 const elements = {
@@ -64,6 +67,8 @@ const elements = {
   download7Days: document.querySelector("#download-7days"),
   trendChart: document.querySelector("#trend-chart"),
   industryHeatmap: document.querySelector("#industry-heatmap"),
+  industryTrendTitle: document.querySelector("#industry-trend-title"),
+  industryTrendChart: document.querySelector("#industry-trend-chart"),
 };
 
 const formatter = new Intl.NumberFormat("zh-Hant", { maximumFractionDigits: 0 });
@@ -137,13 +142,17 @@ const INDUSTRY_CODE_MAP = {
   "26": "電子通路",
   "27": "資訊服務",
   "28": "其他電子",
+  "29": "電子通路",
+  "30": "資訊服務",
+  "31": "數位雲端",
+  "32": "電子商務",
 };
 
 const normalizeIndustry = (value) => {
   const text = String(value ?? "").trim();
   if (!text) return "其他";
   if (INDUSTRY_CODE_MAP[text]) return INDUSTRY_CODE_MAP[text];
-  if (/^\d{2}$/.test(text)) return `代碼${text}`;
+  if (/^\d{2}$/.test(text)) return `未分類(${text})`;
   return text;
 };
 
@@ -621,6 +630,14 @@ const renderIndustryChart = () => {
           },
         },
       },
+      onClick: (_event, elements, chart) => {
+        if (!elements.length) return;
+        const index = elements[0].index;
+        const industry = chart.data.labels[index];
+        if (industry) {
+          loadIndustryTrend(industry);
+        }
+      },
       scales: {
         x: {
           ticks: { color: "#b8c0d4" },
@@ -636,6 +653,119 @@ const renderIndustryChart = () => {
       },
     },
   });
+};
+
+const loadHistoryIndex = async () => {
+  try {
+    const index = await fetchJson("./data/history/index.json");
+    return Array.isArray(index) ? index : [];
+  } catch {
+    return [];
+  }
+};
+
+const loadHistoryStocks = async (date) => {
+  if (state.historyCache.has(date)) {
+    return state.historyCache.get(date);
+  }
+  const base = `./data/history/${date}`;
+  const [twseData, otcData, emergingData] = await Promise.all([
+    fetchJson(`${base}/twse_stock_day_all.json`),
+    fetchCsv(`${base}/otc_stocks.csv`),
+    fetchCsv(`${base}/emerging_stocks.csv`),
+  ]);
+
+  const twseStocks = twseData.map((row) => extractStock(row, "listed"));
+  const otcStocks = parseCsv(otcData).map((row) => extractStock(row, "otc"));
+  const emergingStocks = parseCsv(emergingData).map(extractEmergingStock);
+  const stocks = [...twseStocks, ...otcStocks, ...emergingStocks].filter(
+    (stock) => stock.code
+  );
+  state.historyCache.set(date, stocks);
+  return stocks;
+};
+
+const renderIndustryTrendChart = (labels, data) => {
+  if (!window.Chart) return;
+
+  if (state.charts.industryTrend) {
+    state.charts.industryTrend.destroy();
+  }
+
+  state.charts.industryTrend = new Chart(elements.industryTrendChart, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "成交量",
+          data,
+          borderColor: "rgba(87, 214, 255, 0.9)",
+          backgroundColor: "rgba(87, 214, 255, 0.18)",
+          fill: true,
+          tension: 0.35,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => `成交量 ${formatVolume(context.parsed.y)}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: "#b8c0d4" },
+          grid: { display: false },
+        },
+        y: {
+          ticks: {
+            color: "#b8c0d4",
+            callback: (value) => formatter.format(value),
+          },
+          grid: { color: "rgba(255,255,255,0.08)" },
+        },
+      },
+    },
+  });
+};
+
+const loadIndustryTrend = async (industry) => {
+  elements.industryTrendTitle.textContent = `${industry} · 近7日成交量`;
+
+  if (!state.historyIndex.length) {
+    state.historyIndex = await loadHistoryIndex();
+  }
+  if (!state.historyIndex.length) {
+    elements.industryTrendTitle.textContent = `${industry} · 尚無歷史資料`;
+    renderIndustryTrendChart([], []);
+    return;
+  }
+
+  const recentDates = state.historyIndex.slice(-7);
+  const points = [];
+  for (const date of recentDates) {
+    try {
+      const stocks = await loadHistoryStocks(date);
+      const scoped = filterStocksByMarket(stocks);
+      const total = scoped.reduce((sum, stock) => {
+        const label = state.industries.get(stock.code) || "其他";
+        return label === industry ? sum + stock.volume : sum;
+      }, 0);
+      points.push({ date, value: total });
+    } catch {
+      points.push({ date, value: 0 });
+    }
+  }
+
+  renderIndustryTrendChart(
+    points.map((p) => p.date),
+    points.map((p) => p.value)
+  );
 };
 
 const renderGroupChart = (stats) => {
@@ -887,6 +1017,11 @@ const renderDashboard = (stocks) => {
     renderTrendChart(history);
   } else {
     renderTrendChart([]);
+  }
+
+  if (state.industryAgg.length) {
+    elements.industryTrendTitle.textContent = "點選類股看近7日成交量";
+    renderIndustryTrendChart([], []);
   }
 };
 
