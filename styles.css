@@ -1,17 +1,18 @@
 :root {
-  --bg: #0d1117;
-  --bg-2: #131a26;
-  --panel: rgba(255, 255, 255, 0.06);
-  --panel-strong: rgba(255, 255, 255, 0.12);
-  --text: #f4f6fb;
-  --muted: #b8c0d4;
-  --accent: #45c2b2;
-  --accent-2: #f7b500;
-  --danger: #ff6b6b;
-  --good: #39d98a;
+  --bg: #070a12;
+  --bg-2: #0e1422;
+  --panel: rgba(12, 18, 32, 0.82);
+  --panel-strong: rgba(255, 255, 255, 0.16);
+  --text: #f5f7ff;
+  --muted: #9aa6c1;
+  --accent: #57d6ff;
+  --accent-2: #b36dff;
+  --danger: #ff6a88;
+  --good: #3fffb4;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --sans: "IBM Plex Sans", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-  --shadow: 0 20px 60px rgba(4, 10, 24, 0.55);
+  --shadow: 0 20px 50px rgba(2, 6, 18, 0.6);
+  --glow: 0 0 20px rgba(87, 214, 255, 0.18);
 }
 
 * {
@@ -24,17 +25,31 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  letter-spacing: 0.01em;
 }
 
 .bg {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(69, 194, 178, 0.28), transparent 65%),
-    radial-gradient(1000px 700px at 90% 10%, rgba(247, 181, 0, 0.15), transparent 70%),
-    radial-gradient(900px 900px at 50% 100%, rgba(54, 104, 255, 0.18), transparent 70%),
-    linear-gradient(180deg, #0c1018 0%, #0b121b 60%, #0b0f15 100%);
+    radial-gradient(1200px 600px at 15% -10%, rgba(87, 214, 255, 0.25), transparent 60%),
+    radial-gradient(900px 600px at 90% 10%, rgba(179, 109, 255, 0.22), transparent 65%),
+    radial-gradient(1000px 800px at 50% 100%, rgba(63, 255, 180, 0.18), transparent 70%),
+    linear-gradient(180deg, #05070c 0%, #0a0f1b 55%, #070b12 100%);
   z-index: -1;
+}
+
+.bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(87, 214, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(87, 214, 255, 0.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 .app {
@@ -94,11 +109,12 @@ h1 {
   gap: 16px;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(12, 18, 32, 0.7);
+  border: 1px solid rgba(87, 214, 255, 0.18);
   border-radius: 14px;
   padding: 12px 16px;
   margin-bottom: 24px;
+  box-shadow: var(--shadow);
 }
 
 .toolbar-group {
@@ -125,10 +141,11 @@ h1 {
 
 .card {
   background: var(--panel);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(87, 214, 255, 0.15);
   border-radius: 16px;
   padding: 18px 20px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), var(--glow);
+  backdrop-filter: blur(10px);
 }
 
 .card span {
@@ -155,10 +172,11 @@ h1 {
 
 .panel {
   background: var(--panel);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(87, 214, 255, 0.14);
   border-radius: 18px;
   padding: 18px 20px 22px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), var(--glow);
+  backdrop-filter: blur(12px);
 }
 
 .panel-full {
@@ -195,9 +213,9 @@ h1 {
 
 select,
 input {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(5, 9, 16, 0.7);
   color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(87, 214, 255, 0.2);
   border-radius: 10px;
   padding: 8px 10px;
   font-family: var(--sans);
@@ -214,9 +232,10 @@ input {
   grid-template-columns: 1.3fr 1fr 1fr 0.8fr;
   gap: 12px;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(8, 12, 22, 0.7);
   border-radius: 12px;
   align-items: center;
+  border: 1px solid rgba(87, 214, 255, 0.08);
 }
 
 .row.header {
@@ -234,7 +253,7 @@ input {
 .bar {
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(87, 214, 255, 0.14);
   overflow: hidden;
 }
 
@@ -242,6 +261,7 @@ input {
   display: block;
   height: 100%;
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 12px rgba(87, 214, 255, 0.6);
 }
 
 .badge {
@@ -267,10 +287,10 @@ input {
 }
 
 .group-card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(87, 214, 255, 0.12);
   border-radius: 14px;
   padding: 12px 14px;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(8, 12, 22, 0.7);
   display: grid;
   gap: 6px;
 }
@@ -296,8 +316,8 @@ input {
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: transparent;
+  border: 1px solid rgba(87, 214, 255, 0.25);
+  background: rgba(4, 8, 14, 0.4);
   color: var(--text);
   cursor: pointer;
 }
@@ -319,7 +339,7 @@ input {
 }
 
 .chart-wrap {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(5, 9, 16, 0.6);
   border-radius: 14px;
   padding: 12px;
   margin-bottom: 16px;
@@ -361,19 +381,26 @@ input {
 }
 
 .button {
-  background: linear-gradient(120deg, rgba(69, 194, 178, 0.8), rgba(247, 181, 0, 0.85));
-  color: #0b111b;
+  background: linear-gradient(120deg, rgba(87, 214, 255, 0.9), rgba(179, 109, 255, 0.9));
+  color: #04070f;
   border: none;
   border-radius: 12px;
   padding: 10px 14px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 10px 20px rgba(87, 214, 255, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .button.ghost {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(87, 214, 255, 0.3);
   color: var(--text);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(87, 214, 255, 0.32);
 }
 
 .status {
@@ -384,10 +411,10 @@ input {
 }
 
 .dialog {
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(87, 214, 255, 0.25);
   border-radius: 16px;
   padding: 0;
-  background: #0d1117;
+  background: #0a0f1b;
   color: var(--text);
 }
 

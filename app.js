@@ -3,6 +3,7 @@ const DATA_ENDPOINTS = {
   otcStocks:
     "https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php?l=zh-tw&se=EW&o=data",
   emergingStocks: "https://www.tpex.org.tw/web/emergingstock/lateststats/new_dl.php",
+  marketDaily: "https://www.twse.com.tw/exchangeReport/FMTQIK?response=open_data",
   listedCompanies: "https://mopsfin.twse.com.tw/opendata/t187ap03_L.csv",
   otcCompanies: "https://mopsfin.twse.com.tw/opendata/t187ap03_O.csv",
   emergingCompanies: "https://mopsfin.twse.com.tw/opendata/t187ap03_R.csv",
@@ -61,6 +62,7 @@ const elements = {
   autoRefreshTime: document.querySelector("#auto-refresh-time"),
   industryChart: document.querySelector("#industry-chart"),
   groupChart: document.querySelector("#group-chart"),
+  download7Days: document.querySelector("#download-7days"),
   trendChart: document.querySelector("#trend-chart"),
   industryHeatmap: document.querySelector("#industry-heatmap"),
 };
@@ -185,6 +187,30 @@ const parseCsv = (text) => {
     });
     return rowData;
   });
+};
+
+const toCsvLine = (values) =>
+  values
+    .map((value) => {
+      const text = value == null ? "" : String(value);
+      if (/[",\n]/.test(text)) {
+        return `"${text.replaceAll("\"", "\"\"")}"`;
+      }
+      return text;
+    })
+    .join(",");
+
+const downloadCsv = (rows, filename) => {
+  const csv = rows.map(toCsvLine).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 };
 
 const HISTORY_KEY = "twse-history";
@@ -505,6 +531,11 @@ const updateStatus = (lines) => {
   elements.status.textContent = lines.join("\n");
 };
 
+const appendStatus = (line) => {
+  const current = elements.status.textContent.trim();
+  elements.status.textContent = current ? `${current}\n${line}` : line;
+};
+
 const renderIndustryChart = () => {
   if (!window.Chart) return;
   const topIndustries = [...state.industryAgg]
@@ -694,6 +725,79 @@ const renderHeatmap = () => {
       return `\n        <div class="heatmap-tile" style="background:${color}" title="${row.industry}">\n          <strong>${row.industry}</strong>\n          <span>${formatValue(row.value)}</span>\n          <span>${formatPercent(row.weightedChange)}</span>\n        </div>\n      `;
     })
     .join("");
+};
+
+const downloadLast7Days = async () => {
+  try {
+    const csvText = await fetchCsv(DATA_ENDPOINTS.marketDaily);
+    const rows = parseCsv(csvText);
+    const parsed = rows
+      .map((row) => {
+        const date = normalizeDate(
+          pickField(row, ["日期", "date", "Date", "資料日期"])
+        );
+        const volume = normalizeNumber(
+          pickField(row, ["成交股數", "成交量", "Volume of shares traded"])
+        );
+        const value = normalizeNumber(
+          pickField(row, ["成交金額", "成交金額(千元)", "Transaction Amount"])
+        );
+        const index = normalizeNumber(
+          pickField(row, ["發行量加權股價指數", "Weighted Index"])
+        );
+        const change = normalizeChange(
+          pickField(row, ["漲跌點數", "Change", "漲跌"])
+        );
+        return { date, volume, value, index, change };
+      })
+      .filter((row) => row.date && row.date !== "--");
+
+    parsed.sort((a, b) => a.date.localeCompare(b.date));
+    const last7 = parsed.slice(-7);
+
+    if (!last7.length) {
+      throw new Error("無法取得近7日資料");
+    }
+
+    const rowsOut = [
+      ["日期", "成交股數", "成交金額", "加權指數", "漲跌點數", "資料來源"],
+      ...last7.map((item) => [
+        item.date,
+        item.volume,
+        item.value,
+        item.index,
+        item.change,
+        "TWSE FMTQIK",
+      ]),
+    ];
+    downloadCsv(
+      rowsOut,
+      `twse_market_last7days_${last7[0].date}_to_${last7[last7.length - 1].date}.csv`
+    );
+    appendStatus("已下載近7日成交記錄（上市市場）。");
+  } catch (error) {
+    const history = loadHistory()[state.marketFilter] ?? [];
+    const last7 = history.slice(-7);
+    if (last7.length) {
+      const rowsOut = [
+        ["日期", "成交股數", "成交金額", "加權漲跌", "資料來源"],
+        ...last7.map((item) => [
+          item.date,
+          item.totalVolume,
+          item.totalValue,
+          item.weightedChange,
+          "本機累積",
+        ]),
+      ];
+      downloadCsv(
+        rowsOut,
+        `market_last7days_local_${last7[0].date}_to_${last7[last7.length - 1].date}.csv`
+      );
+      appendStatus("遠端下載失敗，已改用本機累積資料。");
+    } else {
+      appendStatus(`下載失敗：${error.message}`);
+    }
+  }
 };
 
 const renderDashboard = (stocks) => {
@@ -961,6 +1065,13 @@ elements.autoRefresh.addEventListener("change", (event) => {
 elements.autoRefreshTime.addEventListener("change", (event) => {
   state.autoRefresh.time = event.target.value || "15:30";
   saveSettings();
+});
+
+elements.download7Days.addEventListener("click", () => {
+  if (state.marketFilter !== "listed" && state.marketFilter !== "all") {
+    appendStatus("提醒：近7日下載來源為上市市場資料。");
+  }
+  downloadLast7Days();
 });
 
 const bootstrap = () => {
