@@ -489,7 +489,7 @@ const openPlayerDialog = async (player) => {
     const response = await fetch(url);
     if (!response.ok) throw new Error("pybaseball 服務未啟動");
     const data = await response.json();
-    renderMetrics(data.metrics || []);
+    renderMetrics(data.metrics || [], data.note);
   } catch (error) {
     elements.playerMetrics.innerHTML = `
       <div class="metric-card">
@@ -500,10 +500,14 @@ const openPlayerDialog = async (player) => {
   }
 };
 
-const renderMetrics = (metrics) => {
+const renderMetrics = (metrics, note) => {
   if (!metrics.length) {
-    elements.playerMetrics.innerHTML =
-      '<div class="metric-card">此球員無足夠 Statcast 資料。</div>';
+    elements.playerMetrics.innerHTML = `
+      <div class="metric-card">
+        <h4>基本資料</h4>
+        <strong class="muted">${note || "此球員無足夠 Statcast 資料。"}</strong>
+      </div>
+    `;
     return;
   }
   elements.playerMetrics.innerHTML = "";

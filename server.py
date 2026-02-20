@@ -245,7 +245,13 @@ async def player(mlb_id: int, season: int = 2025, role: str = "batter"):
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     if statcast_df is None or statcast_df.empty:
-        raise HTTPException(status_code=404, detail="player has no statcast data")
+        return {
+            "player_id": mlb_id,
+            "season": season,
+            "role": role,
+            "metrics": [],
+            "note": "本季無 Statcast 資料",
+        }
 
     values: Dict[str, Optional[float]] = {}
     if role == "pitcher":
