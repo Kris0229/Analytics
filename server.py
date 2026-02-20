@@ -47,12 +47,31 @@ def _percentile(series, value: float) -> Optional[float]:
     return round(float(percentile), 1)
 
 
+def _load_statcast(func, season: int):
+    # pybaseball signature differs by version; try common variants.
+    variants = [
+        lambda: func(season, minBBE="q"),
+        lambda: func(season),
+        lambda: func(f"{season}-03-01", f"{season}-11-30"),
+    ]
+    last_exc = None
+    for variant in variants:
+        try:
+            return variant()
+        except TypeError as exc:
+            last_exc = exc
+            continue
+    if last_exc:
+        raise last_exc
+    raise RuntimeError("Unable to load Statcast data")
+
+
 @lru_cache(maxsize=6)
 def load_leaderboard(role: str, season: int):
     if role == "batter":
-        return statcast_batter(season, minBBE="q")
+        return _load_statcast(statcast_batter, season)
     if role == "pitcher":
-        return statcast_pitcher(season, minBBE="q")
+        return _load_statcast(statcast_pitcher, season)
     raise ValueError("Unknown role")
 
 
