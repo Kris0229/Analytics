@@ -69,6 +69,24 @@ const normalizeName = (value) =>
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const ensureXlsxLoaded = () =>
+  new Promise((resolve, reject) => {
+    if (window.XLSX) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src =
+      "https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.XLSX) resolve();
+      else reject(new Error("XLSX 載入失敗"));
+    };
+    script.onerror = () => reject(new Error("無法載入 XLSX CDN"));
+    document.head.appendChild(script);
+  });
+
 const pool = async (items, limit, task) => {
   const results = [];
   const executing = [];
@@ -261,7 +279,8 @@ const calcEligibility = async () => {
   render();
 };
 
-const parseExcel = (file) => {
+const parseExcel = async (file) => {
+  await ensureXlsxLoaded();
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (event) => {
