@@ -5,6 +5,8 @@ const MLB = {
     `https://statsapi.mlb.com/api/v1/people/${personId}/stats`,
 };
 
+const API_BASE = window.__API_BASE__ || "http://localhost:8000";
+
 const LEAGUE_IDS = {
   AL: 103,
   NL: 104,
@@ -483,7 +485,7 @@ const openPlayerDialog = async (player) => {
 
   try {
     const role = player.primaryPosition === "P" ? "pitcher" : "batter";
-    const url = `http://localhost:8000/player?mlb_id=${player.id}&season=2025&role=${role}`;
+    const url = `${API_BASE}/player?mlb_id=${player.id}&season=2025&role=${role}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error("pybaseball 服務未啟動");
     const data = await response.json();
