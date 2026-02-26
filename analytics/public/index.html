@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>揮棒數據分析</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <header class="header">
+          <p class="eyebrow">Driveline Swing Lab</p>
+          <h1>揮棒數據分析</h1>
+          <p class="subtitle">上傳 IMU、姿態與 Metadata 三個 CSV，取得專業訓練建議。</p>
+        </header>
+
+        <form id="uploadForm" class="form">
+          <label class="field">
+            <span>IMU 數據（CSV）</span>
+            <input type="file" name="imu" accept=".csv" required />
+          </label>
+
+          <label class="field">
+            <span>姿態數據（CSV）</span>
+            <input type="file" name="pose" accept=".csv" required />
+          </label>
+
+          <label class="field">
+            <span>Metadata（CSV）</span>
+            <input type="file" name="meta" accept=".csv" required />
+          </label>
+
+          <button type="submit" id="submitBtn">開始分析</button>
+        </form>
+
+        <div id="status" class="status" aria-live="polite"></div>
+
+        <section class="result" id="resultSection" hidden>
+          <h2>分析結果</h2>
+          <pre id="resultText"></pre>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
