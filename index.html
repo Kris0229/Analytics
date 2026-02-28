@@ -1,158 +1,48 @@
 <!doctype html>
 <html lang="zh-Hant">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Fantasy Baseball Cheatsheet</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./styles.css" />
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>揮棒數據分析</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="backdrop"></div>
-    <main class="app">
-      <header class="hero">
-        <div>
-          <p class="eyebrow">Fantasy Baseball · 2026 Draft Prep</p>
-          <h1>MLB Cheatsheet Builder</h1>
-          <p class="sub">
-            以 MLB Stats API 建立可選名單，搭配 Excel 刪除已選球員，並用
-            2025 守備場次決定守位資格。
-          </p>
-        </div>
-        <div class="hero-meta">
-          <div>
-            <span>名單來源</span>
-            <strong id="roster-source">尚未載入</strong>
-          </div>
-          <div>
-            <span>可選球員</span>
-            <strong id="available-count">0</strong>
-          </div>
-          <div>
-            <span>已選 / 關閉</span>
-            <strong id="removed-count">0</strong>
-          </div>
-        </div>
-      </header>
+    <main class="page">
+      <section class="card">
+        <header class="header">
+          <p class="eyebrow">Driveline Swing Lab</p>
+          <h1>揮棒數據分析</h1>
+          <p class="subtitle">上傳 IMU、姿態與 Metadata 三個 CSV，取得專業訓練建議。</p>
+        </header>
 
-      <section class="panel controls">
-        <div class="control-group">
-          <label>
-            聯盟
-            <select id="league-select">
-              <option value="all">兩聯盟</option>
-              <option value="AL">美聯</option>
-              <option value="NL">國聯</option>
-            </select>
+        <form id="uploadForm" class="form">
+          <label class="field">
+            <span>IMU 數據（CSV）</span>
+            <input type="file" name="imu" accept=".csv" required />
           </label>
-          <label>
-            名單年度
-            <select id="season-select">
-              <option value="2026" selected>2026</option>
-              <option value="2025">2025</option>
-            </select>
-          </label>
-          <button id="load-roster" class="btn primary">載入 MLB 名單</button>
-        </div>
-        <div class="control-group">
-          <label class="file-input">
-            上傳 Excel（總表）
-            <input id="excel-input" type="file" accept=".xls,.xlsx" />
-          </label>
-          <button id="apply-excel" class="btn ghost" disabled>套用 Excel 刪除</button>
-        </div>
-        <div class="control-group">
-          <label>
-            位置篩選
-            <select id="position-filter">
-              <option value="all">全部位置</option>
-              <option value="C">捕手</option>
-              <option value="1B">一壘</option>
-              <option value="2B">二壘</option>
-              <option value="3B">三壘</option>
-              <option value="SS">游擊</option>
-              <option value="OF">外野</option>
-              <option value="DH">指定打擊</option>
-              <option value="P">投手</option>
-            </select>
-          </label>
-          <label>
-            關鍵字
-            <input id="search-input" type="search" placeholder="搜尋姓名 / 球隊" />
-          </label>
-        </div>
-      </section>
 
-      <section class="panel info">
-        <div>
-          <h2>規則提醒</h2>
-          <ul>
-            <li>以 MLB active roster + nonRosterInvitees 為可選名單。</li>
-            <li>Excel 只抓「總表」工作表中的球員姓名。</li>
-            <li>2025 年單一守備位置 15 場以上才列入該位置；LF/CF/RF 皆歸外野。</li>
-          </ul>
-        </div>
-        <div>
-          <h2>資料來源</h2>
-          <p>
-            MLB Stats API 提供名單與守備場次；球員細項由本機
-            <span class="mono">pybaseball</span> 服務提供。
-          </p>
-          <p class="hint">
-            請先啟動 <span class="mono">server.py</span>，才能查看球員頁面進階數據。
-          </p>
-        </div>
-      </section>
+          <label class="field">
+            <span>姿態數據（CSV）</span>
+            <input type="file" name="pose" accept=".csv" required />
+          </label>
 
-      <section class="panel roster">
-        <div class="roster-header">
-          <div>
-            <h2>可選球員清單</h2>
-            <p class="muted" id="roster-subtitle">尚未載入名單。</p>
-          </div>
-          <div class="roster-actions">
-            <button id="calc-eligibility" class="btn ghost" disabled>
-              計算 2025 守位資格
-            </button>
-            <button id="export-remaining" class="btn" disabled>
-              匯出剩餘名單
-            </button>
-          </div>
-        </div>
-        <div id="roster-grid" class="roster-grid"></div>
-      </section>
+          <label class="field">
+            <span>Metadata（CSV）</span>
+            <input type="file" name="meta" accept=".csv" required />
+          </label>
 
-      <section class="panel removed">
-        <h2>已選 / 關閉球員</h2>
-        <div id="removed-list" class="removed-list"></div>
+          <button type="submit" id="submitBtn">開始分析</button>
+        </form>
+
+        <div id="status" class="status" aria-live="polite"></div>
+
+        <section class="result" id="resultSection" hidden>
+          <h2>分析結果</h2>
+          <pre id="resultText"></pre>
+        </section>
       </section>
     </main>
 
-    <dialog id="player-dialog" class="dialog">
-      <div class="dialog-header">
-        <div>
-          <p id="player-team" class="eyebrow">--</p>
-          <h3 id="player-name">球員</h3>
-          <p id="player-positions" class="muted">--</p>
-        </div>
-        <button id="close-dialog" class="icon-btn">關閉</button>
-      </div>
-      <div id="player-metrics" class="metrics">
-        <div class="metric-card">載入中…</div>
-      </div>
-      <div class="dialog-actions">
-        <button id="mark-closed" class="btn ghost">關閉球員</button>
-        <button id="mark-picked" class="btn primary">已選球員</button>
-      </div>
-    </dialog>
-
-    <script src="./config.js"></script>
-    <script src="./app.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>
